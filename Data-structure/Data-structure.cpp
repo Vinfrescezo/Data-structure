@@ -1,9 +1,9 @@
 ﻿#include <bits/stdc++.h>
-#define MAX_VERTEX_NUM 100
-int visited[MAX_VERTEX_NUM] = { 0 };
+#define MAX_VERTEX_NUM 10
+
 typedef struct ArcCell
 {
-	int adj; //表示顶点间的邻接关系，1表示有边，0表示无边
+	int adj; //表示权
 }ArcCell, AdjMatrix[MAX_VERTEX_NUM][MAX_VERTEX_NUM];
 
 typedef struct
@@ -13,6 +13,12 @@ typedef struct
 	int vexnum, arcnum;
 	int kind;
 }MGraph;
+
+typedef struct //辅助数组
+{
+	char adjvex; //顶点U集中顶点相连接的点
+	int lowcost; //代价最小的边
+}Closedge[MAX_VERTEX_NUM];
 
 int LocateVex(MGraph G, char target)
 {
@@ -26,10 +32,11 @@ int LocateVex(MGraph G, char target)
 
 void CreateGraph(MGraph* G)
 {
-	printf("输入顶点个数，弧的个数，以空格分割\n");
-	scanf("%d%d", &G->vexnum, &G->arcnum);
+	printf("输入顶点个数默认为5，请输入弧的个数\n");
+	G->vexnum = 5; //五个城市，顶点数默认为5
+	scanf("%d", &G->arcnum);
 	getchar();
-	printf("输入各顶点的数据信息，按空格分隔\n");
+	printf("输入各城市的数据信息，按空格分隔\n");
 	for (int i = 0; i < G->vexnum; i++)
 	{
 		scanf("%c", &G->vexs[i]);
@@ -37,55 +44,59 @@ void CreateGraph(MGraph* G)
 	}
 	for (int i = 0; i < G->vexnum; i++)
 		for (int j = 0; j < G->vexnum; j++)
-			G->arcs[i][j].adj = 0; //给图的弧进行初始化，默认每个顶点间无弧
-	printf("每行输入一条弧连接的两个顶点的data，以空格分隔\n");
+			G->arcs[i][j].adj = INT_MAX; //给图的边的权进行初始化，默认权为最大整数
+	printf("每行输入两个城市的名称，和他们之间的权，以空格分隔\n");
 	for (int i = 0; i < G->arcnum; i++)
 	{
 		char v1, v2;
-		scanf("%c %c", &v1, &v2);
+		int adj;
+		scanf("%c %c %d", &v1, &v2, &adj);
 		getchar();
 		int n = LocateVex(*G, v1);
 		int m = LocateVex(*G, v2);
-		G->arcs[n][m].adj = 1;
-		G->arcs[m][n].adj = 1; //无向图为对称矩阵，则v2到v1也要设为1表示有弧
+		G->arcs[n][m].adj = adj;
+		G->arcs[m][n].adj = adj; //城市之间的距离无向
 	}
-	G->kind = 0; //构造的是无向图
+	G->kind = 3; //构造的是网
 }
-
-void DFS(MGraph* G, int v) //深度优先搜索
+int minimum(Closedge closedge,int n)
 {
-	printf("%c ", G->vexs[v]);
-	visited[v] = 1;
-	for (int i = 0; i < G->vexnum; i++)
+	int min = INT_MAX;
+	int k = -1;
+	for (int i = 0; i < n; i++)
 	{
-		if (visited[i] == 0 && G->arcs[v][i].adj == 1) //如果该顶点没有访问过且当前访问的顶点与该顶点有弧
+		if (closedge[i].lowcost > 0 && closedge[i].lowcost < min)
 		{
-			DFS(G, i); //递归进行深度搜索
+			min = closedge[i].lowcost; //找到最小代价
+			k = i; //记录最小代价对应的顶点下标
 		}
 	}
+	return k;
 }
-
-void BFS(MGraph* G, int v) //广度优先搜索
+void MiniSpanTree_PRIM(MGraph G, char u) //用普里姆算法从顶点u出发构建网G的最小生成树
 {
-	int Quene[MAX_VERTEX_NUM]; //用数组和双指针模拟队列
-	int front = 0, rear = 0; //rear++表示入队，front++表示出队
-	printf("%c ", G->vexs[v]);
-	visited[v] = 1;
-	Quene[rear++] = v;
-	while (rear > front) //如果队列不为空
+	int k = LocateVex(G, u);
+	int min = 0;
+	Closedge closedge;
+	for (int j = 0; j < G.vexnum; j++)
 	{
-		int w = Quene[front]; //队头元素出队
-		front++;
-		for (int i = 0; i < G->vexnum; i++)
+		if (j != k)
+			closedge[j] = { u,G.arcs[k][j].adj };
+	}
+	closedge[k].lowcost = 0; //初始下U集中仅有u一个顶点，顶点到自身的最小代价为0
+	for (int i = 1; i < G.vexnum; i++) //继续向生成树上添加顶点
+	{
+		k = minimum(closedge, G.vexnum);
+		min += closedge[k].lowcost;
+		printf("%c %c\n",closedge[k].adjvex, G.vexs[k]);
+		closedge[k].lowcost = 0;
+		for (int j = 0; j < G.vexnum; j++)
 		{
-			if (G->arcs[w][i].adj == 1 && visited[i] == 0) //如果队头元素和遍历的顶点之间有弧，且该顶点未访问过
-			{
-				visited[i] = 1;
-				printf("%c ", G->vexs[i]);
-				Quene[rear++] = i; //访问该顶点，且该顶点入队
-			}
+			if (G.arcs[k][j].adj < closedge[j].lowcost) //如果新并入的顶点到别的点的长度更短
+				closedge[j] = { G.vexs[k],G.arcs[k][j].adj }; //更新最小代价
 		}
 	}
+	printf("最小代价为%d\n", min);
 }
 
 int main()
@@ -93,16 +104,10 @@ int main()
 	MGraph G;
 	CreateGraph(&G);
 	printf("已创建图！\n");
-	printf("请输入要进行深度搜索的初始顶点下标\n");
-	//int v;
-	scanf("%d", &v);
-	printf("进行深度搜索的路径为\n");
-	DFS(&G, v);
-	printf("\n");
-	memset(visited, 0, sizeof(visited));
-	printf("请输入要进行广度搜索的初始顶点下标\n");
-	scanf("%d", &v);
-	printf("进行广度搜索的路径为\n");
-	BFS(&G, v);
+	printf("请输入要从哪个顶点构造最小生成树\n");
+	char u;
+	scanf("%c", &u);
+	printf("最小生成树的路径为\n");
+	MiniSpanTree_PRIM(G, u);
 	return 0;
 }

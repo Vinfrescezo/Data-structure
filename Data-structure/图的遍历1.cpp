@@ -1,4 +1,6 @@
-//#include <bits/stdc++.h>
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <string.h>
 //#define MAX_VERTEX_NUM 100 //Vertex顶点数，定义最大定点数为100
 //int visited[MAX_VERTEX_NUM] = { 0 };
 //
@@ -28,8 +30,10 @@
 //		if (target == G.vertices[i].data)
 //			return i;
 //	}
-//	return -1;
+//	printf("未查找到数值为%c的顶点，程序退出", target);
+//	exit(0);
 //}
+//
 //void CreateGraph(ALGraph* G)
 //{
 //	printf("输入顶点个数，弧的个数，以空格分割\n");
@@ -76,6 +80,11 @@
 //
 //void DFS(ALGraph* G, int v) //深度优先搜索
 //{
+//	if (v >= G->vexnum)
+//	{
+//		printf("不存在该顶点，搜索结束\n");
+//		return;
+//	}
 //	printf("%c ", G->vertices[v].data);
 //	visited[v] = 1;
 //	ArcNode* p = G->vertices[v].firstarc;
@@ -92,6 +101,11 @@
 //
 //void BFS(ALGraph* G, int v) //广度优先搜索
 //{
+//	if (v >= G->vexnum)
+//	{
+//		printf("不存在该顶点，搜索结束\n");
+//		return;
+//	}
 //	int Quene[MAX_VERTEX_NUM]; //用数组和双指针模拟队列
 //	int front = 0, rear = 0; //rear++表示出队，front++表示入队
 //	printf("%c ", G->vertices[v].data);
