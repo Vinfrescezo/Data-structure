@@ -1,93 +1,199 @@
 ﻿#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#define NULLKEY -1
+typedef int Status;
+typedef int KeyType;
+int hashsize[] = {7, 17, 31, 61, 127, 251, 509, 1021, 2039, 4093}; //提前设置好对应的哈希函数大小
+int size = 0; //把哈希表的大小设置为全局变量了，方便调用
 
-typedef struct BiTNode //二叉排序树
+struct ElemType //数据元素类型
 {
-	int data;
-	BiTNode* lchild, * rchild;
-}BiTNode,*BiTree;
+	int key; //设关键字为整型
+};
 
-int SearchBST(BiTree T, int key, BiTree f, BiTree* p) //在根指针T所指二叉排序树中递归地查找其关键字等于key的数据
-{													  //查找成功则返回p所指数据元素的结点，并返回1，否则表明查找不成功
-	if (T == NULL) //返回指针p所指查找路径上访问的最后一个结点，并返回函数值为0
-	{
-		*p = f; //指针f指向当前访问的结点的双亲，其初始调用值为NULL
-		return 0;
-	}
-	else if (key == T->data)
-	{
-		*p = T;
-		return 1;
-	}
-	else if (key > T->data) //如果查找的树大于目前的数，则在左子树中查找
-		return SearchBST(T->lchild, key, T, p);
-	else //否则在右子树中查找
-		return SearchBST(T->rchild, key, T, p);
-}
-int InsertBST(BiTree &T,int e)
+typedef struct
 {
-	BiTree p;
-	if (SearchBST(T, e, NULL, &p) == 0)
+	ElemType* elem;
+	int count;
+	int sizeindex;
+}HashTable;
+
+Status InitHashTable(HashTable* H, int n) //初始化哈希表
+{
+	int index = 0;
+	while (hashsize[index]*0.7 < n) 
 	{
-		BiTree s = (BiTree)malloc(sizeof(BiTNode));
-		s->data = e;
-		s->lchild = s->rchild = NULL;
-		if (p == NULL)
-			T = s;
-		else if (e > p->data) //如果插入的数据大于结点
-			p->lchild = s; //插入s为p的左孩子
-		else
-			p->rchild = s; //反之插入s为p的右孩子
-		return 1;
+		index++;
 	}
-		return 0;
+	H->sizeindex = index;
+	H->count = 0;
+	size = hashsize[H->sizeindex];
+	H->elem = (ElemType*)malloc(size * sizeof(ElemType));
+	if (H->elem == NULL)
+	{
+		printf("内存分配失败，程序退出！\n");
+		exit(0);
+	}
+	for (int i = 0; i < size; i++)
+	{
+		H->elem[i].key = NULLKEY; //所有哈希地址上的元素都为空
+	}
+	return 1;
 }
 
-void Inorder(BiTree T)
+int Hash(KeyType K) //用除留余数法构造的哈希函数
 {
-	if (T == NULL) //结点为空时返回
+	return K % size;
+}
+
+void collision(int* p)
+{
+	*p = (*p + 1) % size; //处理冲突的方式为线性探测再散列，其中增量为1
+}
+
+Status SearchHash(HashTable H, KeyType K, int& p, int& c) //在开放定址哈希表H中查找关键字为K的数据
+{
+	p = Hash(K); //p为待查数据在表中的位置，求其哈希地址
+	while (H.elem[p].key != NULLKEY && K != H.elem[p].key) //如果当前哈希地址不为空，则表明发生了冲突，继续查找
 	{
-		return;
+		collision(&p); //处理冲突
+		c++;
 	}
-	Inorder(T->lchild); //中序访问左子树
-	printf("%d ", T->data); //输出根结点
-	Inorder(T->rchild); //中序访问右子树
+	if (K == H.elem[p].key) 
+		return 1;
+	else
+		return 0;
+}
+
+Status RecreateHashTable(HashTable *H)
+{
+	ElemType* oldElem = H->elem;
+	int oldSize = hashsize[H->sizeindex];
+	H->sizeindex++;
+	size = hashsize[H->sizeindex];
+	H->elem = (ElemType*)malloc(size * sizeof(ElemType));
+	if (H->elem == NULL)
+	{
+		printf("内存分配失败，程序退出！\n");
+		exit(0);
+	}
+	for (int i = 0; i < size; i++) //初始化哈希地址上的元素为空
+	{
+		H->elem[i].key = NULLKEY;
+	}
+	for (int i = 0; i < oldSize; i++) //将原来的元素重新分配到新的哈希表中
+	{
+		if (oldElem[i].key != NULLKEY) 
+		{
+			int p = Hash(oldElem[i].key); //因为表的容量改变了，所以整体对应的哈希地址也变了
+			while (H->elem[p].key != NULLKEY)
+			{
+				collision(&p);
+			}
+			H->elem[p] = oldElem[i]; 
+		}
+	}
+	return 1;
+}
+
+Status InsertHash(HashTable* H, ElemType e)
+{
+	int c = 0; //c为冲突次数，初始为0
+	int p; //p为待插入元素在表中的位置
+	if (SearchHash(*H, e.key, p, c) == 1)
+	{
+		printf("该元素在表中已存在，无法插入\n");
+		return 0;
+	}
+	else
+	{
+		H->elem[p] = e;
+		H->count++;
+		double loadFactor = (double)H->count / size;
+		if (loadFactor > 0.7) //要求装载因子不超过0.7
+		{
+			printf("装载因子超过0.7，重建哈希表\n");
+			RecreateHashTable(H);
+		}
+	}
+	return 1;
+}
+
+void DisplayKey(HashTable H)
+{
+	printf("索引\t关键字\n");
+	for (int i = 0; i < size; i++) {
+		if (H.elem[i].key != NULLKEY) {
+			printf("%d\t%d\n", i, H.elem[i].key);
+		}
+	}
+}
+
+void DisplayHashTable(HashTable H) { //输出哈希表信息
+	printf("========== 哈希表信息 ==========\n");
+	printf("当前容量：%d\n", size);
+	printf("元素个数：%d\n", H.count);
+	printf("装载因子：%.2f\n", (double)H.count / size);
+	printf("哈希表内容：\n");
+	DisplayKey(H);
+	printf("================================\n");
 }
 
 int main()
 {
-	BiTree T = NULL;
-	int n, e;
-	printf("请输入关键字的个数\n");
+	HashTable H;
+	printf("请输入关键字序列的个数\n");
+	int n;
 	scanf("%d", &n);
-	printf("请输入%d个关键字，按空格分隔\n", n);
+	InitHashTable(&H, n);
+	printf("请输入%d个无序关键字（整数）：\n", n);
 	for (int i = 0; i < n; i++)
 	{
-		scanf("%d", &e);
-		getchar();
-		InsertBST(T, e);
+		KeyType key;
+		scanf("%d", &key);
+		ElemType e;
+		e.key = key;
+		InsertHash(&H, e);
 	}
-	printf("构造的二叉排序树的中序遍历结果为\n");
-	Inorder(T);
-	printf("\n");
+	DisplayHashTable(H);
 	while (1)
 	{
-		printf("请输入要查找的数据\n");
-		if (scanf("%d", &e) != 1)
+		int choice;
+		KeyType key;
+		printf("请选择操作：\n");
+		printf("1. 查找关键字\n");
+		printf("2. 显示哈希表\n");
+		printf("3. 退出程序\n");
+		scanf("%d", &choice);
+		int p, c = 0;
+		switch (choice)
+		{
+		case 1:
+			printf("请输入关键字\n");
+			scanf("%d", &key);
+			c = 0;
+			if (SearchHash(H, key, p, c))
+			{
+				printf("查找成功，哈希地址为%d，查找次数为%d\n", p, c + 1); //查找次数为冲突次数+1
+			}
+			else
+			{
+				printf("查找失败，插入哈希表，并显示关键词序列\n");
+				ElemType e;
+				e.key = key;
+				InsertHash(&H, e);
+				DisplayKey(H);
+			}
 			break;
-		BiTree p;
-		if (SearchBST(T, e, NULL, &p) == 1)
-		{
-			printf("已查找到该数据\n");
-		}
-		else
-		{
-			printf("未查找到该数据，将该数据插入到排序树中\n");
-			InsertBST(T, e);
-			printf("插入后中序遍历的结果为\n");
-			Inorder(T);
-			printf("\n");
+		case 2:
+			DisplayHashTable(H);
+			break;
+		case 3:
+			return 0;
+		default:
+			printf("请重新输入正确的数\n");
+			break;
 		}
 	}
 }

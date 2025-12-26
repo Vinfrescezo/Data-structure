@@ -27,5 +27,8 @@
     <ClCompile Include="图的最小生成树.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="查找1.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
