@@ -21,9 +21,9 @@ int SearchBST(BiTree T, int key, BiTree f, BiTree* p) //在根指针T所指二�
 		return 1;
 	}
 	else if (key > T->data) //如果查找的树大于目前的数，则在左子树中查找
-		SearchBST(T->lchild, key, T, p);
+		return SearchBST(T->lchild, key, T, p);
 	else //否则在右子树中查找
-		SearchBST(T->rchild, key, T, p);
+		return SearchBST(T->rchild, key, T, p);
 }
 int InsertBST(BiTree &T,int e)
 {
