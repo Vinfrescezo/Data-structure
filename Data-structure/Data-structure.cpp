@@ -1,113 +1,93 @@
-﻿#include <bits/stdc++.h>
-#define MAX_VERTEX_NUM 10
+﻿#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-typedef struct ArcCell
+typedef struct BiTNode //二叉排序树
 {
-	int adj; //表示权
-}ArcCell, AdjMatrix[MAX_VERTEX_NUM][MAX_VERTEX_NUM];
+	int data;
+	BiTNode* lchild, * rchild;
+}BiTNode,*BiTree;
 
-typedef struct
-{
-	char vexs[MAX_VERTEX_NUM]; //存储顶点的数据类型
-	AdjMatrix arcs;
-	int vexnum, arcnum;
-	int kind;
-}MGraph;
-
-typedef struct //辅助数组
-{
-	char adjvex; //顶点U集中顶点相连接的点
-	int lowcost; //代价最小的边
-}Closedge[MAX_VERTEX_NUM];
-
-int LocateVex(MGraph G, char target)
-{
-	for (int i = 0; i < G.vexnum; i++)
+int SearchBST(BiTree T, int key, BiTree f, BiTree* p) //在根指针T所指二叉排序树中递归地查找其关键字等于key的数据
+{													  //查找成功则返回p所指数据元素的结点，并返回1，否则表明查找不成功
+	if (T == NULL) //返回指针p所指查找路径上访问的最后一个结点，并返回函数值为0
 	{
-		if (target == G.vexs[i])
-			return i;
+		*p = f; //指针f指向当前访问的结点的双亲，其初始调用值为NULL
+		return 0;
 	}
-	return -1;
+	else if (key == T->data)
+	{
+		*p = T;
+		return 1;
+	}
+	else if (key > T->data) //如果查找的树大于目前的数，则在左子树中查找
+		SearchBST(T->lchild, key, T, p);
+	else //否则在右子树中查找
+		SearchBST(T->rchild, key, T, p);
+}
+int InsertBST(BiTree &T,int e)
+{
+	BiTree p;
+	if (SearchBST(T, e, NULL, &p) == 0)
+	{
+		BiTree s = (BiTree)malloc(sizeof(BiTNode));
+		s->data = e;
+		s->lchild = s->rchild = NULL;
+		if (p == NULL)
+			T = s;
+		else if (e > p->data) //如果插入的数据大于结点
+			p->lchild = s; //插入s为p的左孩子
+		else
+			p->rchild = s; //反之插入s为p的右孩子
+		return 1;
+	}
+		return 0;
 }
 
-void CreateGraph(MGraph* G)
+void Inorder(BiTree T)
 {
-	printf("输入顶点个数默认为5，请输入弧的个数\n");
-	G->vexnum = 5; //五个城市，顶点数默认为5
-	scanf("%d", &G->arcnum);
-	getchar();
-	printf("输入各城市的数据信息，按空格分隔\n");
-	for (int i = 0; i < G->vexnum; i++)
+	if (T == NULL) //结点为空时返回
 	{
-		scanf("%c", &G->vexs[i]);
-		getchar();
+		return;
 	}
-	for (int i = 0; i < G->vexnum; i++)
-		for (int j = 0; j < G->vexnum; j++)
-			G->arcs[i][j].adj = INT_MAX; //给图的边的权进行初始化，默认权为最大整数
-	printf("每行输入两个城市的名称，和他们之间的权，以空格分隔\n");
-	for (int i = 0; i < G->arcnum; i++)
-	{
-		char v1, v2;
-		int adj;
-		scanf("%c %c %d", &v1, &v2, &adj);
-		getchar();
-		int n = LocateVex(*G, v1);
-		int m = LocateVex(*G, v2);
-		G->arcs[n][m].adj = adj;
-		G->arcs[m][n].adj = adj; //城市之间的距离无向
-	}
-	G->kind = 3; //构造的是网
-}
-int minimum(Closedge closedge,int n)
-{
-	int min = INT_MAX;
-	int k = -1;
-	for (int i = 0; i < n; i++)
-	{
-		if (closedge[i].lowcost > 0 && closedge[i].lowcost < min)
-		{
-			min = closedge[i].lowcost; //找到最小代价
-			k = i; //记录最小代价对应的顶点下标
-		}
-	}
-	return k;
-}
-void MiniSpanTree_PRIM(MGraph G, char u) //用普里姆算法从顶点u出发构建网G的最小生成树
-{
-	int k = LocateVex(G, u);
-	int min = 0;
-	Closedge closedge;
-	for (int j = 0; j < G.vexnum; j++)
-	{
-		if (j != k)
-			closedge[j] = { u,G.arcs[k][j].adj };
-	}
-	closedge[k].lowcost = 0; //初始下U集中仅有u一个顶点，顶点到自身的最小代价为0
-	for (int i = 1; i < G.vexnum; i++) //继续向生成树上添加顶点
-	{
-		k = minimum(closedge, G.vexnum);
-		min += closedge[k].lowcost;
-		printf("%c %c\n",closedge[k].adjvex, G.vexs[k]);
-		closedge[k].lowcost = 0;
-		for (int j = 0; j < G.vexnum; j++)
-		{
-			if (G.arcs[k][j].adj < closedge[j].lowcost) //如果新并入的顶点到别的点的长度更短
-				closedge[j] = { G.vexs[k],G.arcs[k][j].adj }; //更新最小代价
-		}
-	}
-	printf("最小代价为%d\n", min);
+	Inorder(T->lchild); //中序访问左子树
+	printf("%d ", T->data); //输出根结点
+	Inorder(T->rchild); //中序访问右子树
 }
 
 int main()
 {
-	MGraph G;
-	CreateGraph(&G);
-	printf("已创建图！\n");
-	printf("请输入要从哪个顶点构造最小生成树\n");
-	char u;
-	scanf("%c", &u);
-	printf("最小生成树的路径为\n");
-	MiniSpanTree_PRIM(G, u);
-	return 0;
+	BiTree T = NULL;
+	int n, e;
+	printf("请输入关键字的个数\n");
+	scanf("%d", &n);
+	printf("请输入%d个关键字，按空格分隔\n", n);
+	for (int i = 0; i < n; i++)
+	{
+		scanf("%d", &e);
+		getchar();
+		InsertBST(T, e);
+	}
+	printf("构造的二叉排序树的中序遍历结果为\n");
+	Inorder(T);
+	printf("\n");
+	while (1)
+	{
+		printf("请输入要查找的数据\n");
+		if (scanf("%d", &e) != 1)
+			break;
+		BiTree p;
+		if (SearchBST(T, e, NULL, &p) == 1)
+		{
+			printf("已查找到该数据\n");
+		}
+		else
+		{
+			printf("未查找到该数据，将该数据插入到排序树中\n");
+			InsertBST(T, e);
+			printf("插入后中序遍历的结果为\n");
+			Inorder(T);
+			printf("\n");
+		}
+	}
 }

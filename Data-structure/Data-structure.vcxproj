@@ -124,6 +124,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Data-structure.cpp" />
+    <ClCompile Include="图的最小生成树.cpp" />
     <ClCompile Include="图的遍历1.cpp" />
     <ClCompile Include="图的遍历2.cpp" />
   </ItemGroup>
