@@ -1,5 +1,6 @@
 # Data-structure 数据结构
-### 注：ctrl+shift+/ 可以一键注释代码，取消注释代码  
+### 注：ctrl+shift+/ 可以一键注释代码，取消注释代码 
+用的visual studio，直接把所有代码下载下来放到vs上就能跑，不是visual studio code
 
 ## 图的遍历1和遍历2都可用的输入样例  
 8 9  
