@@ -30,5 +30,11 @@
     <ClCompile Include="查找1.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="查找2.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="排序.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
